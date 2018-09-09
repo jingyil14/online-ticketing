@@ -96,15 +96,11 @@
     });
     
     function deleteFilm(film_id) {
-    	  var modal = document.getElementById("processModal");
-	  	  $(modal).modal('show');
-	  	  setTimeout(function(){
-	  		$.ajax({
-	          	url: "AdminHomeControllerServlet?id="+film_id,
-	          	type: "post",
-	          	async:false
-	      	});
-	  	  }, 1000);
+    	var msg = $.ajax({
+          	url: "AdminHomeControllerServlet?id="+film_id,
+          	type: "post",
+          	async:false
+      	});
     }
     
     function createCard(filmInfo) {
