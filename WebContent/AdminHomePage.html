@@ -16,9 +16,9 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
-        <a class="nav-item nav-link active" href="/onlineTIcketingSystem/AdminHomePage.html">Movies</a>
-        <a class="nav-item nav-link" href="/onlineTIcketingSystem/ViewOrder.html">Orders</a>
-        <a class="nav-item nav-link" href="/onlineTIcketingSystem/ViewAccount.html">Accounts</a>
+        <a class="nav-item nav-link active" href="/AdminHomePage.html">Movies</a>
+        <a class="nav-item nav-link" href="/ViewOrder.html">Orders</a>
+        <a class="nav-item nav-link" href="/ViewAccount.html">Accounts</a>
       </div>
     </div>
     <form class="form-inline">
@@ -86,12 +86,12 @@
     }
   
     $("#logoutbtn").on("click", function () {
-    	window.location.href = "/onlineTIcketingSystem/index.html";
+    	window.location.href = "/index.html";
     	window.event.returnValue = false;	
     });
     
     $("#addbtn").on("click", function () {
-    	window.location.href = "/onlineTIcketingSystem/AddFilm.html";
+    	window.location.href = "/AddFilm.html";
     	window.event.returnValue = false;	
     });
     
@@ -108,8 +108,8 @@
     }
     
     function createCard(filmInfo) {
-    	var view_url = "/onlineTIcketingSystem/ViewFilm.html?id=";
-    	var edit_url = "/onlineTIcketingSystem/EditFilm.html?id=";
+    	var view_url = "/ViewFilm.html?id=";
+    	var edit_url = "/EditFilm.html?id=";
     	
     	var div_row = document.createElement("div");
     	div_row.className = "row";
