@@ -2,10 +2,9 @@ package onlineticketing.domain;
 
 import java.util.ArrayList;
 
-public class ScreeningRoom {
+public class ScreeningRoom extends DomainObject{
 
-	int screeningRoomId;
-	ArrayList<Seat> seats;
+	private ArrayList<Seat> seats;
 	
 	public ScreeningRoom() {
 		
@@ -13,24 +12,16 @@ public class ScreeningRoom {
 	
 	public ScreeningRoom(int screeningRoomId, ArrayList<Seat> seats) {
 		super();
-		this.screeningRoomId = screeningRoomId;
+		this.id = Integer.toString(screeningRoomId);
 		this.seats = seats;
 	}
 
 	public int getScreeningRoomId() {
-		return screeningRoomId;
-	}
-
-	public void setScreeningRoomId(int screeningRoomId) {
-		this.screeningRoomId = screeningRoomId;
+		return Integer.parseInt(id);
 	}
 
 	public ArrayList<Seat> getSeats() {
 		return seats;
 	}
 
-	public void setSeats(ArrayList<Seat> seats) {
-		this.seats = seats;
-	}
-	
 }

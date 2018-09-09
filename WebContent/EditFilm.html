@@ -221,7 +221,11 @@
 	        <form>
 	          <div class="form-group">
 	            <label class="col-form-label">Screening Room:</label>
-	            <input type="text" class="form-control" id="screening_room">
+	            <select class="form-control" name="screening_room" id="screening_room" required>
+	      		      <option value="1">1</option>
+	      		      <option value="2">2</option>
+	      		      <option value="3">3</option>
+    		    </select>
 	          </div>
 	          <div class="form-group">
 	            <label class="col-form-label">Start Time:</label>
@@ -441,33 +445,60 @@
 	  
 	  $("#addbtn").on("click", function () {
 		  var scheduleInfo = getScheduleInfo("addModal");
-		  var msg = $.ajax({
-          		url: "EditFilmControllerServlet?action=addSchedule",
-          		type: "post",
-          		dataType: 'json',
-          		data: scheduleInfo,
-          		async:false
-      		}).responseText;
-		  scheduleInfo["schedule_id"] = msg;
-		  addRow(scheduleInfo);
-		  var modal = document.getElementById("addModal");
-		  $(modal).modal('hide');
+		  if (validator(scheduleInfo)) {
+			  var msg = $.ajax({
+	          		url: "EditFilmControllerServlet?action=addSchedule",
+	          		type: "post",
+	          		dataType: 'json',
+	          		data: scheduleInfo,
+	          		async:false
+	      		}).responseText;
+			  scheduleInfo["schedule_id"] = msg;
+			  addRow(scheduleInfo);
+			  var modal = document.getElementById("addModal");
+			  $(modal).modal('hide');  
+		  } else {
+			  alert("All fields can not be empty.");
+		  }
 	  });
 	  
 	  $("#editbtn").on("click", function () {
 		  var scheduleInfo = getScheduleInfo("editModal");
-		  var msg = $.ajax({
-        		url: "EditFilmControllerServlet?action=editSchedule",
-        		type: "post",
-        		dataType: 'json',
-        		data: scheduleInfo,
-        		async:false
-    		}).responseText;
-		  console.log(msg);
-		  updateTable(scheduleInfo);
-		  var modal = document.getElementById("editModal");
-		  $(modal).modal('hide');
+		  if (validator(scheduleInfo)) {
+			  var msg = $.ajax({
+	        		url: "EditFilmControllerServlet?action=editSchedule",
+	        		type: "post",
+	        		dataType: 'json',
+	        		data: scheduleInfo,
+	        		async:false
+	    		}).responseText;
+			  console.log(msg);
+			  updateTable(scheduleInfo);
+			  var modal = document.getElementById("editModal");
+			  $(modal).modal('hide');
+		  } else {
+			  alert("All fields can not be empty.");
+		  }
 	  });
+	  
+	  function validator(scheduleInfo) {
+		  if (scheduleInfo.start_day == "" || 
+			  scheduleInfo.start_month == "" ||
+			  scheduleInfo.start_year == "" ||
+			  scheduleInfo.start_hour == "" ||
+			  scheduleInfo.start_min == "" ||
+			  scheduleInfo.end_day == "" || 
+			  scheduleInfo.end_month == "" ||
+			  scheduleInfo.end_year == "" ||
+			  scheduleInfo.end_hour == "" ||
+			  scheduleInfo.end_min == "" ||
+			  scheduleInfo.price == "")
+		  {
+			  return false;
+		  } else {
+			  return true;
+		  }
+	  }
 	  
 	  function updateTable(scheduleInfo) {
 		  var scheduleId = scheduleInfo.schedule_id;

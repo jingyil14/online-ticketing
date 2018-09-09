@@ -43,16 +43,8 @@ public class Order extends DomainObject{
 		return payment;
 	}
 
-	public void setPayment(float payment) {
-		this.payment = payment;
-	}
-
 	public Date getCreateTime() {
 		return createTime;
-	}
-
-	public void setCreateTime(Date createTime) {
-		this.createTime = createTime;
 	}
 
 	public int getStatus() {
@@ -63,22 +55,12 @@ public class Order extends DomainObject{
 		this.status = status;
 	}
 
-
 	public int getCustomerId() {
 		return customerId;
 	}
 
-
-	public void setCustomerId(int customerId) {
-		this.customerId = customerId;
-	}
-
 	public String getTicketInformation() {
 		return ticketInformation;
-	}
-
-	public void setTicketInformation(String ticketInformation) {
-		this.ticketInformation = ticketInformation;
 	}
 
 }
