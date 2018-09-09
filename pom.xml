@@ -48,9 +48,40 @@
         <version>7.6.0.v20120127</version>
     </dependency>
     <dependency>
-        <groupId>javax.servlet</groupId>
-        <artifactId>servlet-api</artifactId>
-        <version>2.5</version>
-    </dependency>
+	    <groupId>javax.servlet</groupId>
+	    <artifactId>javax.servlet-api</artifactId>
+	    <version>3.1.0</version>
+	    <scope>provided</scope>
+	</dependency>
+	<dependency>
+    	<groupId>top.jfunc.json</groupId>
+    	<artifactId>Json-Jsonlib</artifactId>
+    	<version>1.0</version>
+	</dependency>
+	<dependency>
+	    <groupId>net.oschina.bilbodai.common.beanutil</groupId>
+	    <artifactId>beanutil</artifactId>
+	    <version>3.1.4</version>
+	</dependency>
+	<dependency>
+	    <groupId>commons-collections</groupId>
+	    <artifactId>commons-collections</artifactId>
+	    <version>3.2.2</version>
+	</dependency>
+	<dependency>
+	    <groupId>org.apache.commons</groupId>
+	    <artifactId>commons-lang3</artifactId>
+	    <version>3.8</version>
+	</dependency>
+	<dependency>
+	    <groupId>commons-logging</groupId>
+	    <artifactId>commons-logging</artifactId>
+	    <version>1.2</version>
+	</dependency>
+	<dependency>
+	    <groupId>net.sf.ezmorph</groupId>
+	    <artifactId>ezmorph</artifactId>
+	    <version>1.0.6</version>
+	</dependency>
   </dependencies>
 </project>
