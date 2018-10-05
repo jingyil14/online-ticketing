@@ -93,6 +93,7 @@
   	}
   });
 		  
+  
   function authorisation() {
 	var msg = $.ajax({
      	url: "PaymentControllerServlet",
@@ -103,7 +104,7 @@
      	},
       	async:false
   	}).responseText;
-	if (msg !== "true") {
+	if (msg == "false") {
 		window.history.back();
 		return false;
 	}
