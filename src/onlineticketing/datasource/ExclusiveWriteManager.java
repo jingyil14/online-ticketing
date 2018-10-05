@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import onlineticketing.domain.Order;
 import onlineticketing.domain.Ticket;
@@ -34,7 +35,8 @@ public class ExclusiveWriteManager {
 		PreparedStatement createStatement = DBConnection.prepare(createLockString);
 		
 		try {
-			LocalDateTime dueDate = LocalDateTime.now().plusMinutes(Params.LOCK_INTERVAL);
+			LocalDateTime dueDate = 
+					LocalDateTime.now(ZoneId.of("Australia/Sydney")).plusMinutes(Params.LOCK_INTERVAL);
 			createStatement.setString(1, lockable);
 			createStatement.setInt(2, owner);
 			createStatement.setObject(3, dueDate);
@@ -178,7 +180,7 @@ public class ExclusiveWriteManager {
 			System.err.println("There is no lock for " + lockable);
 			return true;
 		}
-		if(LocalDateTime.now().compareTo(dueDate) == -1)
+		if(LocalDateTime.now(ZoneId.of("Australia/Sydney")).compareTo(dueDate) == -1)
 			return false;
 		return true;
 	}

@@ -1,6 +1,7 @@
 package onlineticketing.service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -74,7 +75,7 @@ public class CustomerService {
 			return -1;
 		}
 		
-		LocalDateTime createTime = LocalDateTime.now();
+		LocalDateTime createTime = LocalDateTime.now(ZoneId.of("Australia/Sydney"));
 		int status = Params.ORDER_CREATED;
 		int orderId = getNextOrderId();
 		String ticketInformation = getTicketInformation(orderDTO.getTickets());

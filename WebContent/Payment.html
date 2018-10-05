@@ -93,7 +93,6 @@
   	}
   });
 		  
-  
   function authorisation() {
 	var msg = $.ajax({
      	url: "PaymentControllerServlet",
@@ -104,7 +103,7 @@
      	},
       	async:false
   	}).responseText;
-	if (msg == "false") {
+	if (msg !== "true") {
 		window.history.back();
 		return false;
 	}
@@ -127,8 +126,8 @@
   
   function timeOut()
   {
-	  // window.location.href = "/ViewOrder.html";
-  	  // window.event.returnValue = false;
+	  window.location.href = "/ViewOrder.html";
+  	  window.event.returnValue = false;
   }
   
   function setInfo()
