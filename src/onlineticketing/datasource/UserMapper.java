@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import onlineticketing.domain.Customer;
 import onlineticketing.domain.DomainObject;
 import onlineticketing.domain.User;
 import onlineticketing.onlineticketing.Params;
@@ -20,19 +21,20 @@ public class UserMapper implements DataMapper{
 		assert !(obj instanceof User) : "obj is not a user object";
 		User user = (User)obj;
 		
-//		User targetUser = new User();
-//		IdentityMap<User> userMap = IdentityMap.getInstance(targetUser);
+		User targetUser = new User();
+		IdentityMap<User> userMap = IdentityMap.getInstance(targetUser);
 		
 		String createUserString = "INSERT INTO ONLINETICKETING.USERS "
-				+ "(USERNAME, PASSWORD, PHONENUMBER, PERMISSION) "
-				+ "VALUES (?, ?, ?, ?)";
+				+ "(USERID, USERNAME, PASSWORD, PHONENUMBER, PERMISSION) "
+				+ "VALUES (?, ?, ?, ?, ?)";
 		PreparedStatement createStatement = DBConnection.prepare(createUserString);
 		
 		try {
-			createStatement.setString(1, user.getUserName());
-			createStatement.setString(2, user.getPassword());
-			createStatement.setInt(3, user.getPhoneNumber());
-			createStatement.setInt(4, user.getPermission());
+			createStatement.setInt(1, Integer.parseInt(user.getId()));
+			createStatement.setString(2, user.getUserName());
+			createStatement.setString(3, user.getPassword());
+			createStatement.setInt(4, user.getPhoneNumber());
+			createStatement.setInt(5, user.getPermission());
 			createStatement.execute();
 			System.out.println(createStatement.toString());
 			
@@ -43,7 +45,7 @@ public class UserMapper implements DataMapper{
 			e.printStackTrace();
 		}
 		
-//		userMap.put(id, obj);
+		userMap.put(user.getId(), user);
 		
 	}
 	
@@ -91,6 +93,9 @@ public class UserMapper implements DataMapper{
 	 */
 	public static User findUserByUsername(String username) {
 		User user = null;
+		User targetUser = new User();
+		IdentityMap<User> userMap = IdentityMap.getInstance(targetUser);
+		
 		String findUserString = "SELECT * FROM ONLINETICKETING.USERS "
 				+ "WHERE USERNAME = '" + username + "'";
 		PreparedStatement findStatement = DBConnection.prepare(findUserString);
@@ -109,7 +114,57 @@ public class UserMapper implements DataMapper{
 			e.printStackTrace();
 		}
 		
+		if(user != null) {
+			targetUser = userMap.get(user.getId());
+			if(targetUser == null) {
+				userMap.put(user.getId(), user);
+				return user;
+			}
+			else
+				return targetUser;
+		}
+		
 		return user;
+	}
+	
+	/**
+	 * Find a user in the databse by user ID
+	 * @param userId  the input user ID
+	 * @return the user which has the user ID passed in, returns null if 
+	 * 		   there does not exist a user with the user ID passed in
+	 */
+	public static User findUserByUserId(int userId) {
+		User user = null;
+		User targetUser = new User();
+		IdentityMap<User> userMap = IdentityMap.getInstance(targetUser);
+		targetUser = userMap.get(Integer.toString(userId));
+		
+		if (targetUser == null) {
+			
+			String findUserString = "SELECT * FROM ONLINETICKETING.USERS "
+					+ "WHERE USERID = " + userId;
+			PreparedStatement findStatement = DBConnection.prepare(findUserString);
+			
+			try {
+				ResultSet rs = findStatement.executeQuery();
+				
+				while(rs.next()) {
+					user = loadUser(rs);
+				}
+				DBConnection.close(findStatement);
+				rs.close();
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			userMap.put(user.getId(), user);
+			return user;
+		} 
+		else
+			return targetUser;
+		
 	}
 	
 	
@@ -122,27 +177,42 @@ public class UserMapper implements DataMapper{
 	 */
 	public static User findUser(String username, String password) {
 		User user = null;
-		String findUserString = "SELECT * FROM ONLINETICKETING.USERS "
-				+ "WHERE USERNAME = '" + username + "'";
-		PreparedStatement findStatement = DBConnection.prepare(findUserString);
+		User targetUser = new User();
+		IdentityMap<User> userMap = IdentityMap.getInstance(targetUser);
+		targetUser = userMap.get(username);
 		
-		try {
-			ResultSet rs = findStatement.executeQuery();
+		if(targetUser == null) {
 			
-			while(rs.next()) {
-				user = loadUser(rs);
-				if (!user.getPassword().equals(password))
-					user = null;
+			String findUserString = "SELECT * FROM ONLINETICKETING.USERS "
+					+ "WHERE USERNAME = '" + username + "'";
+			PreparedStatement findStatement = DBConnection.prepare(findUserString);
+			
+			try {
+				ResultSet rs = findStatement.executeQuery();
+				
+				while(rs.next()) {
+					user = loadUser(rs);
+					if (!user.getPassword().equals(password))
+						user = null;
+				}
+				DBConnection.close(findStatement);
+				rs.close();
+				
+				if (user != null) {
+					
+					userMap.put(user.getId(), user);	
+				}
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			DBConnection.close(findStatement);
-			rs.close();
-			
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return user;
 		}
+		else if (targetUser.getPassword().equals(password))
+			return targetUser;
 		
-		return user;
+		return null;
 	}
 	
 	@Override
@@ -210,7 +280,12 @@ public class UserMapper implements DataMapper{
 			int phoneNumber = rs.getInt("PHONENUMBER");
 			boolean permission = (rs.getInt("PERMISSION") == 
 					Params.ADMIN_PERMISSION ? false : true);
-			user = new User(userId, userName, password, phoneNumber, permission);
+			
+			if (!permission) {
+				user = new User(userId, userName, password, phoneNumber, permission);
+			} else {
+				user = new Customer(userId, userName, password, phoneNumber, permission);
+			}		
 			
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block

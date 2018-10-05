@@ -13,15 +13,19 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.sf.json.JSONObject;
+import onlineticketing.datatransfer.FilmServiceBean;
+import onlineticketing.datatransfer.ScheduleServiceBean;
 import onlineticketing.domain.Film;
 import onlineticketing.domain.Schedule;
+import onlineticketing.onlineticketing.Params;
 import onlineticketing.service.FilmService;
+import onlineticketing.service.ScheduleService;
 
 /**
  * Servlet implementation class ViewFilmControllerServlet
  */
 @WebServlet("/ViewFilmControllerServlet")
-public class ViewFilmControllerServlet extends HttpServlet {
+public class ViewFilmControllerServlet extends ActionServlet {
 	private static final long serialVersionUID = 1L;
        
     /**
@@ -33,37 +37,73 @@ public class ViewFilmControllerServlet extends HttpServlet {
     }
 
 	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#doGet(HttpServletRequest request, 
+	 * HttpServletResponse response)
 	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		/*
-		System.out.println(request.getParameter("id"));
-		Duration runningTime  = Duration.ofHours(1);
-		runningTime = runningTime.plusMinutes(30);
-		LocalDateTime startTime = LocalDateTime.now();
-		LocalDateTime endTime = LocalDateTime.now();
-		Schedule schedule = new Schedule("0",1,startTime,endTime,100,0);
-		ArrayList<Schedule> schedules = new ArrayList<Schedule>();
-		schedules.add(schedule);
-		Film film = new Film(0,"A","B","C","D","E",runningTime,schedules);
-		*/
-		
+	protected void doGet(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		String action = request.getParameter("action");
+		if (action.equals("basic")) {
+			getBasicInfo(request, response);
+		} else if (action.equals("schedule")) {
+			getScheduleInfo(request, response);
+		}
+	}
+	
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, 
+	 * HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, 
+			HttpServletResponse response)
+					throws ServletException, IOException {
+		String action = request.getParameter("action");
+		if (action.equals("logout")) {
+			logout(request, response);
+		} else if (action.equals("authorisation")) {
+			String target = Params.VIEW_FILM_URL;
+			authorisation(target, request, response);
+		}
+	}
+	
+	/**
+	 * Get basic information of a film with the id
+	 * in the passed-in request.
+	 * 
+	 * @param request	HttpServletRequest
+	 * @param response	HttpServletResponse
+	 */
+	private void getBasicInfo(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
 		String id = request.getParameter("id");
-		FilmService filmService = new FilmService();
-		Film film = filmService.findFilmByFilmId(id);
 		
-		JSONObject listArray=JSONObject.fromObject(film);
+		FilmServiceBean filmServiceBean = new FilmServiceBean();
+		String filmJson = filmServiceBean.getFilmJson(id);
 		
-		response.getWriter().write(listArray.toString());
+		response.getWriter().write(filmJson);
 		response.flushBuffer();
 	}
-
+	
 	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 * Get schedule information of a film with the id
+	 * in the passed-in request.
+	 * 
+	 * @param request	HttpServletRequest
+	 * @param response	HttpServletResponse
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		doGet(request, response);
+	private void getScheduleInfo(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		String id = request.getParameter("id");
+		ScheduleServiceBean scheduleServiceBean = 
+				new ScheduleServiceBean();
+		String scheduleJson = 
+				scheduleServiceBean.getScheduleJson(id);
+		
+		response.getWriter().write(scheduleJson);
+		response.flushBuffer();
 	}
 
 }

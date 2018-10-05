@@ -9,13 +9,16 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import onlineticketing.datatransfer.FilmDTO;
+import onlineticketing.datatransfer.FilmServiceBean;
+import onlineticketing.onlineticketing.Params;
 import onlineticketing.service.FilmService;
 
 /**
  * Servlet implementation class AddFilmControllerServlet
  */
 @WebServlet("/AddFilmControllerServlet")
-public class AddFilmControllerServlet extends HttpServlet {
+public class AddFilmControllerServlet extends ActionServlet {
 	private static final long serialVersionUID = 1L;
        
     /**
@@ -27,27 +30,41 @@ public class AddFilmControllerServlet extends HttpServlet {
     }
 
 	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#doPost(HttpServletRequest request,
+	 * HttpServletResponse response)
 	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
+	protected void doPost(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		String action = request.getParameter("action");
+		if (action.equals("add")) {
+			addFilm(request, response);
+		} else if (action.equals("logout")) {
+			logout(request, response);
+		} else if (action.equals("authorisation")) {
+			String target = Params.ADD_FILM_URL;
+			authorisation(target, request, response);
+		}
 	}
-
+	
 	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 * Add a film to the system according to the passed-in film info
+	 * @param request	the HttpServletRequest
+	 * @param response	the HttpServletResponse
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String filmTitle = request.getParameter("film_title");
-		String filmDirector = request.getParameter("film_director");
-		String filmMaincast = request.getParameter("film_maincast");
-		String filmGenre = request.getParameter("film_genre");
-		String filmDescription = request.getParameter("film_description");
-		int filmRunningHour = Integer.parseInt(request.getParameter("film_runninghour"));
-		int filmRunningMin = Integer.parseInt(request.getParameter("film_runningmin")); 
+	private void addFilm(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		String jsonStr = getRequestContent(request);
+		
+		FilmServiceBean filmServiceBean = new FilmServiceBean();
+		FilmDTO filmDTO = filmServiceBean.postFilmJson(jsonStr);
+		
 		FilmService filmService = new FilmService();
-		filmService.createFilm(filmTitle, filmDescription, filmDirector, 
-				filmMaincast, filmGenre, filmRunningHour, filmRunningMin);
+		filmService.createFilm(filmDTO.getTitle(), 
+				filmDTO.getDescription(), filmDTO.getDirector(), 
+				filmDTO.getMainCast(), filmDTO.getGenre(), 
+				filmDTO.getRunningHour(), filmDTO.getRunningMin());
 		response.getWriter().write("success");
 		response.flushBuffer();
 	}

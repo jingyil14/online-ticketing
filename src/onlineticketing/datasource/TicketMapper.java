@@ -60,8 +60,8 @@ public class TicketMapper implements DataMapper{
 		IdentityMap<Ticket> ticketMap = IdentityMap.getInstance(targetTicket);
 		
 		String updateTicketString = "UPDATE ONLINETICKETING.TICKETS "
-				+ "SET SOLD = ?, ORDERID = ? WHERE TICKETID = " 
-				+ ticket.getId();
+				+ "SET SOLD = ?, ORDERID = ? WHERE TICKETID = '" 
+				+ ticket.getId() + "'";
 		PreparedStatement updateStatement = DBConnection.prepare(updateTicketString);
 		
 		try {
@@ -122,7 +122,7 @@ public class TicketMapper implements DataMapper{
 		IdentityMap<Ticket> ticketMap = IdentityMap.getInstance(targetTicket);
 		
 		String findTicketsString = "SELECT * FROM ONLINETICKETING.TICKETS "
-				+ "WHERE SCHEDULEID = '" + scheduleId + "'";
+				+ "WHERE SCHEDULEID = '" + scheduleId + "' ORDER BY SEATID ASC";
 		PreparedStatement findStatement = DBConnection.prepare(findTicketsString);
 		ArrayList<Ticket> ticketList = new ArrayList<Ticket>();
 		
@@ -148,7 +148,116 @@ public class TicketMapper implements DataMapper{
 			e.printStackTrace();
 		}	
 		
+		for(Ticket ticket : ticketList) {
+			checkLockExpire(ticket);
+		}
+		
 		return ticketList;
+	}
+	
+	public static ArrayList<Ticket> findTicketsByOrderId(int orderId){
+		
+		Ticket targetTicket = new Ticket();
+		IdentityMap<Ticket> ticketMap = IdentityMap.getInstance(targetTicket);
+		
+		String findTicketsString = "SELECT * FROM ONLINETICKETING.TICKETS "
+				+ "WHERE ORDERID = " + orderId;
+		PreparedStatement findStatement = DBConnection.prepare(findTicketsString);
+		ArrayList<Ticket> ticketList = new ArrayList<Ticket>();
+		
+		try {
+			ResultSet rs = findStatement.executeQuery();
+			
+			while(rs.next()) {
+				Ticket ticket = loadTicket(rs);
+				targetTicket = ticketMap.get(ticket.getId());
+				if(targetTicket == null) {
+					ticketMap.put(ticket.getId(), ticket);
+					ticketList.add(ticket);
+				} else {
+					ticketList.add(targetTicket);
+				}
+				
+			}
+			DBConnection.close(findStatement);
+			rs.close();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
+		
+		for(Ticket ticket : ticketList) {
+			checkLockExpire(ticket);
+		}
+		
+		return ticketList;
+	}
+	
+	public static Ticket findTicketByTicketId(String ticketId) {
+		Ticket targetTicket = new Ticket();
+		IdentityMap<Ticket> ticketMap = IdentityMap.getInstance(targetTicket);
+		targetTicket = ticketMap.get(ticketId);
+		
+		if(targetTicket == null) {
+			Ticket ticket = null;
+			String findTicketsString = "SELECT * FROM ONLINETICKETING.TICKETS "
+					+ "WHERE TICKETID = '" + ticketId + "'";
+			PreparedStatement findStatement = DBConnection.prepare(findTicketsString);
+			
+			try {
+				ResultSet rs = findStatement.executeQuery();
+				
+				while(rs.next()) {
+					ticket = loadTicket(rs);
+					ticketMap.put(ticket.getId(), ticket);
+				}
+				DBConnection.close(findStatement);
+				rs.close();
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			checkLockExpire(ticket);
+			return ticket;
+		}
+		else {
+			checkLockExpire(targetTicket);
+			return targetTicket;
+		}
+	}
+	
+	public static Ticket findTicketByTicketIdWithoutLockCheck(String ticketId) {
+		Ticket targetTicket = new Ticket();
+		IdentityMap<Ticket> ticketMap = IdentityMap.getInstance(targetTicket);
+		targetTicket = ticketMap.get(ticketId);
+		
+		if(targetTicket == null) {
+			Ticket ticket = null;
+			String findTicketsString = "SELECT * FROM ONLINETICKETING.TICKETS "
+					+ "WHERE TICKETID = '" + ticketId + "'";
+			PreparedStatement findStatement = DBConnection.prepare(findTicketsString);
+			
+			try {
+				ResultSet rs = findStatement.executeQuery();
+				
+				while(rs.next()) {
+					ticket = loadTicket(rs);
+					ticketMap.put(ticket.getId(), ticket);
+				}
+				DBConnection.close(findStatement);
+				rs.close();
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return ticket;
+		}
+		else {
+			return targetTicket;
+		}
 	}
 	
 	
@@ -167,7 +276,10 @@ public class TicketMapper implements DataMapper{
 			int orderId = rs.getInt("ORDERID");
 			String scheduleId = rs.getString("SCHEDULEID");
 			
-			ticket = new Ticket(ticketId, isSold, seatId, orderId, scheduleId);
+			ExclusiveWriteManager lockingManager = ExclusiveWriteManager.getInstance();
+			boolean isLocked = lockingManager.hasLock(ticketId);
+			
+			ticket = new Ticket(ticketId, isSold, seatId, orderId, scheduleId, isLocked);
 			
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -175,6 +287,16 @@ public class TicketMapper implements DataMapper{
 		}
 		
 		return ticket;
+	}
+	
+	public static void checkLockExpire (Ticket ticket) {
+		ExclusiveWriteManager lockingManager = ExclusiveWriteManager.getInstance();
+		
+		if (lockingManager.hasLock(ticket.getId())) {
+			if (lockingManager.lockExpire(ticket.getId())) {
+				lockingManager.releaseLock(ticket.getId());
+			}
+		}
 	}
 
 }

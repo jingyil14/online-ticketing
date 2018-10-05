@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>View All Orders</title>
+  <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+  <link rel="stylesheet" href="resources/bootstrap-4.1.3-dist/css/bootstrap.min.css"/>
+  <script src="resources/bootstrap-4.1.3-dist/js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="resources/DataTables/datatables.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="resources/DataTables/DataTables-1.10.18/css/dataTables.bootstrap4.min.css"/>
+  <script type="text/javascript" src="resources/DataTables/DataTables-1.10.18/js/dataTables.bootstrap4.min.js"></script>
+</head>
+<body>
+  <!-- NAV BAR -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Online Ticketing</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+      <div class="navbar-nav">
+        <a class="nav-item nav-link" href="/AdminHomePage.html">Movies</a>
+        <a class="nav-item nav-link active" href="/ViewAllOrder.html">Orders</a>
+        <a class="nav-item nav-link" href="/ViewAccount.html">Accounts</a>
+      </div>
+    </div>
+    <form class="form-inline" action="ViewAllOrderControllerServlet?action=logout" method="post">
+      <button class="btn btn-outline-danger my-2 my-sm-0" type="submit" id="logoutbtn">Log Out</button>
+    </form>
+  </nav>
+  
+  <!-- DATATABLE -->
+  <div class="container">
+    <!-- HEAD -->
+    <div class="row">
+      <div class="col-sm-1"></div>
+      <div class="col-sm-10">
+        <h2>All Orders</h2>
+      </div>
+      <div class="col-sm-1"></div>
+    </div>
+    <div class="row">
+      <div class="col-sm-1"></div>
+      <div class="col-sm-10">
+        <table id="order_table" class="table table-striped" style="width:100%">
+		  <thead>
+		    <tr>
+	          <th>Order ID</th>
+		      <th>User ID</th>
+		      <th>Ticket information</th>
+		      <th>Create time</th>
+		      <th>Payment</th>
+		      <th>Status</th>
+		    </tr>
+		  </thead>
+		</table>
+      </div>
+      <div class="col-sm-1"></div>
+    </div>
+  </div>
+  
+  
+  <script type="text/javascript">
+    $(document).ready(function() {
+   	  var authorised = authorisation(); 	
+    	
+   	  if (authorised) {
+		  $('#order_table').DataTable({
+		    "ajax" : 
+		    	function(data, callback, settings) {
+	            $.ajax({
+	                type: "GET",
+	                url: 'ViewAllOrderControllerServlet',
+	                cache : false, 
+	                dataType: "json",
+	                success: function(result) {
+	                	var orderJson = {};
+	                	orderJson["data"] = result;
+	                	callback(orderJson);
+	                },
+	                error: function(XMLHttpRequest, textStatus, errorThrown) {
+	                    alert("Failed.");
+	                }
+	            });
+		       }
+	        ,
+	        "columns": [
+	            { "data": "order_id" },
+	            { "data": "customer_id"},
+	            { "data": "ticket_information",
+	              "width": "30%",
+	            },
+	            { "data": "create_time",
+	           	  "render": function (data, type, full, meta) {
+	           		  			console.log(data);
+	           		  			var date = data.year + "-" + data.monthValue + "-" +
+	           		  				data.dayOfMonth + " " + data.hour + ":" + data.minute +
+	           		  				":" + data.second;
+	         		  			return date;}
+	            },
+	            { "data": "payment" ,
+	           	  "render": function (data, type, full, meta) {
+	     		  				var price = '$' + data;
+	   		  					return price;
+	   		  				}
+	            },
+	            { "data": "status",
+	              "render": function (data, type, full, meta) {
+	            	  			var status;
+	            	  			if (data == 0){
+	            	  				status = "Wating for paying";
+	            	  			} else if (data == 1){
+	            	  				status = "Paid";
+	            	  			} else if (data == 2){
+	            	  				status = "Canceled";
+	            	  			}
+	            	  			return status;	
+	              			}
+	            }
+	        ],
+	        "order": [[ 3, "desc" ]],
+	      });
+   	  }
+	} );
+    
+    function authorisation() {
+		var msg = $.ajax({
+	     	url: "ViewAllOrderControllerServlet",
+	     	type: "post",
+	     	dataType: 'json',
+	     	data: {
+	     		action: "authorisation",
+	     	},
+	      	async:false
+	  	}).responseText;
+		if (msg !== "true") {
+			window.history.back();
+			return false;
+		}
+		return true;
+	 }
+  </script>	
+</body>
+</html>

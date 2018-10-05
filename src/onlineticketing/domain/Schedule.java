@@ -1,9 +1,11 @@
 package onlineticketing.domain;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.ArrayList;
 
+import onlineticketing.datasource.IdentityMap;
 import onlineticketing.datasource.ScreeningRoomMapper;
+import onlineticketing.datasource.TicketMapper;
 import onlineticketing.datasource.UnitOfWork;
 
 public class Schedule extends DomainObject{
@@ -13,7 +15,8 @@ public class Schedule extends DomainObject{
 	private ScreeningRoom screeningRoom;
 	private float price;
 	private int filmId;
-	private List<Ticket> tickets;
+	private ArrayList<Ticket> tickets;
+	private boolean ticketLoaded;
 
 	public Schedule(){
 		
@@ -85,7 +88,19 @@ public class Schedule extends DomainObject{
 		UnitOfWork.getCurrent().registerDirty(this);
 	}
 
-	public List<Ticket> getTickets() {
+	public ArrayList<Ticket> getTickets() {
+		if(!ticketLoaded) {
+			this.tickets = TicketMapper.findTicketsByScheduleId(id);
+			this.ticketLoaded = true;
+		} else {
+			Ticket targetTicket = new Ticket();
+			IdentityMap<Ticket> ticketMap = IdentityMap.getInstance(targetTicket);
+			
+			for (Ticket ticket : tickets) {
+				ticket = ticketMap.get(ticket.getId());
+			}
+		}
+		
 		return tickets;
 	}
 

@@ -4,6 +4,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -57,10 +58,11 @@ public class ScheduleMapper implements DataMapper{
 		ArrayList<Seat> seats = schedule.getScreeningRoom().getSeats();
 		String scheduleId = schedule.getId();
 		TicketMapper ticketMapper = new TicketMapper();
+		LockingMapper lockingMapper = new LockingMapper(ticketMapper);
 		for(Seat seat : seats) {
 			String ticketId = scheduleId + "T" + seat.getSeatId();
 			Ticket ticket = new Ticket(ticketId, seat.getSeatId(), scheduleId);
-			ticketMapper.insert(ticket);
+			lockingMapper.insert(ticket);
 		}
 	}
 	
@@ -113,10 +115,12 @@ public class ScheduleMapper implements DataMapper{
 		IdentityMap<Schedule> scheduleMap = IdentityMap.getInstance(targetSchedule);
 		
 		//delete tickets for a schedule
-		ArrayList<Ticket> ticketList = TicketMapper.findTicketsByScheduleId(schedule.getId());
 		TicketMapper ticketMapper = new TicketMapper();
+		LockingMapper lockingMapper = new LockingMapper(ticketMapper);
+		ArrayList<Ticket> ticketList = TicketMapper.findTicketsByScheduleId(schedule.getId());
+		
 		for(Ticket ticket : ticketList) {
-			ticketMapper.delete(ticket);
+			lockingMapper.delete(ticket);
 		}
 		
 		String deleteScheduleString = "DELETE FROM ONLINETICKETING.SCHEDULES "
@@ -227,8 +231,10 @@ public class ScheduleMapper implements DataMapper{
 		try {
 			String scheduleId = rs.getString("SCHEDULEID");
 			int screeningRoomId = rs.getInt("SCREENINGROOMID");
-			LocalDateTime startTime = convertToLocalDateTimeViaSqlTimestamp(rs.getDate("STARTTIME"));
-			LocalDateTime endTime = convertToLocalDateTimeViaSqlTimestamp(rs.getDate("ENDTIME"));
+			Timestamp startTimestamp = rs.getTimestamp("STARTTIME");
+			Timestamp endTimestamp = rs.getTimestamp("ENDTIME");
+			LocalDateTime startTime = convertToLocalDateTimeViaSqlTimestamp(new Date(startTimestamp.getTime()));
+			LocalDateTime endTime = convertToLocalDateTimeViaSqlTimestamp(new Date(endTimestamp.getTime()));
 			float price = rs.getFloat("PRICE");
 			int filmId = rs.getInt("FILMID");
 			

@@ -1,6 +1,8 @@
 package onlineticketing.controller;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -12,8 +14,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import onlineticketing.datatransfer.FilmDTO;
+import onlineticketing.datatransfer.FilmServiceBean;
+import onlineticketing.datatransfer.ScheduleDTO;
+import onlineticketing.datatransfer.ScheduleServiceBean;
 import onlineticketing.domain.Film;
 import onlineticketing.domain.Schedule;
+import onlineticketing.onlineticketing.Params;
 import onlineticketing.service.FilmService;
 import onlineticketing.service.ScheduleService;
 
@@ -21,7 +28,7 @@ import onlineticketing.service.ScheduleService;
  * Servlet implementation class EditFilmControllerServlet
  */
 @WebServlet("/EditFilmControllerServlet")
-public class EditFilmControllerServlet extends HttpServlet {
+public class EditFilmControllerServlet extends ActionServlet {
 	private static final long serialVersionUID = 1L;
 	ScheduleService scheduleService;
        
@@ -34,9 +41,12 @@ public class EditFilmControllerServlet extends HttpServlet {
     }
 
 	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#doGet(HttpServletRequest request, 
+	 * HttpServletResponse response)
 	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doGet(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
 		String action = request.getParameter("action");
 		scheduleService = new ScheduleService();
 		if (action.equals("basic")) {
@@ -47,9 +57,12 @@ public class EditFilmControllerServlet extends HttpServlet {
 	}
 
 	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#doPost(HttpServletRequest request, 
+	 * HttpServletResponse response)
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doPost(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
 		String action = request.getParameter("action");
 		if (action.equals("basic")) {
 			postBasicInfo(request, response);
@@ -61,84 +74,111 @@ public class EditFilmControllerServlet extends HttpServlet {
 			editSchedule(request, response);
 		} else if (action.equals("saveSchedule")) {
 			saveSchedule(request, response);
+		} else if (action.equals("logout")) {
+			logout(request, response);
+		} else if (action.equals("authorisation")) {
+			String target = Params.EDIT_FILM_URL;
+			authorisation(target, request, response);
 		}
 	}
 	
-	private void getBasicInfo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	/**
+	 * Get basic information of a film.
+	 * 
+	 * @param request	HttpServletRequest
+	 * @param response	HttpServletResponse
+	 */
+	private void getBasicInfo(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
 		String id = request.getParameter("id");
-		FilmService filmService = new FilmService();
-		Film film = filmService.findFilmByFilmId(id);
 		
-		JSONObject filmJson=JSONObject.fromObject(film);
+		FilmServiceBean filmServiceBean = new FilmServiceBean();
+		String filmJson = filmServiceBean.getFilmJson(id);
 		
-		response.getWriter().write(filmJson.toString());
+		response.getWriter().write(filmJson);
 		response.flushBuffer();
 	}
 	
-	private void getScheduleInfo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		/*
-		LocalDateTime startTime = LocalDateTime.now();
-		LocalDateTime endTime = LocalDateTime.now();
-		Schedule schedule = new Schedule("0",1,startTime,endTime,100,0);
-		ArrayList<Schedule> schedules = new ArrayList<Schedule>();
-		schedules.add(schedule);*/
+	/**
+	 * Get schedule information of a film.
+	 * 
+	 * @param request	HttpServletRequest
+	 * @param response	HttpServletResponse
+	 */
+	private void getScheduleInfo(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
 		String id = request.getParameter("id");
-		FilmService filmService = new FilmService();
-		Film film = filmService.findFilmByFilmId(id);
-		ArrayList<Schedule> schedules = film.getSchedule();
+		ScheduleServiceBean scheduleServiceBean = 
+				new ScheduleServiceBean();
+		String scheduleJson = 
+				scheduleServiceBean.getScheduleJson(id);
 		
-		JSONArray scheduleList=JSONArray.fromObject(schedules);
-		
-		response.getWriter().write(scheduleList.toString());
+		response.getWriter().write(scheduleJson);
 		response.flushBuffer();
 	}
 	
-	private void postBasicInfo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String filmId = request.getParameter("film_id");
-		String filmTitle = request.getParameter("film_title");
-		String filmDirector = request.getParameter("film_director");
-		String filmMaincast = request.getParameter("film_maincast");
-		String filmGenre = request.getParameter("film_genre");
-		String filmDescription = request.getParameter("film_description");
+	/**
+	 * Update basic information of a film.
+	 * 
+	 * @param request	HttpServletRequest
+	 * @param response	HttpServletResponse
+	 */
+	private void postBasicInfo(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		String jsonStr = getRequestContent(request);
+		
+		FilmServiceBean filmServiceBean = new FilmServiceBean();
+		FilmDTO filmDTO = filmServiceBean.postFilmJson(jsonStr);
+		
 		FilmService filmService = new FilmService();
-		filmService.editFilm(filmId, filmTitle, filmDescription,
-				filmDirector, filmMaincast, filmGenre);
+		filmService.editFilm(filmDTO.getFilmId(), 
+				filmDTO.getTitle(), filmDTO.getDescription(),
+				filmDTO.getDirector(), filmDTO.getMainCast(), 
+				filmDTO.getGenre());
+		
 		response.getWriter().write("success");
 		response.flushBuffer();
 	}
 	
-	private void addSchedule(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		int filmId = Integer.parseInt(request.getParameter("film_id"));
-		int screeningRoomId = Integer.parseInt(request.getParameter("screening_room"));
-		float price = Float.parseFloat(request.getParameter("price"));
-		int startDay = Integer.parseInt(request.getParameter("start_day"));
-		int startMonth = Integer.parseInt(request.getParameter("start_month"));
-		int startYear = Integer.parseInt(request.getParameter("start_year"));
-		int startHour = Integer.parseInt(request.getParameter("start_hour"));
-		int startMin = Integer.parseInt(request.getParameter("start_min"));
-		LocalDateTime startTime = LocalDateTime.of(startYear, startMonth, startDay, startHour, startMin);
-		int endDay = Integer.parseInt(request.getParameter("end_day"));
-		int endMonth = Integer.parseInt(request.getParameter("end_month"));
-		int endYear = Integer.parseInt(request.getParameter("end_year"));
-		int endHour = Integer.parseInt(request.getParameter("end_hour"));
-		int endMin = Integer.parseInt(request.getParameter("end_min"));
-		LocalDateTime endTime = LocalDateTime.of(endYear, endMonth, endDay, endHour, endMin);
+	/**
+	 * Add a new schedule to a film.
+	 * 
+	 * @param request	HttpServletRequest
+	 * @param response	HttpServletResponse
+	 */
+	private void addSchedule(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		String jsonStr = getRequestContent(request);
 		
-		/*
-		System.out.println(filmId);
-		System.out.println(screeningRoomId);
-		System.out.println(price);
-		System.out.println(startTime);
-		System.out.println(endTime);
-		*/
-		String scheduleId = 
-				scheduleService.createSchedule(filmId, screeningRoomId, startTime, endTime, price);
+		ScheduleServiceBean scheduleServiceBean = 
+				new ScheduleServiceBean();
+		ScheduleDTO scheduleDTO = 
+				scheduleServiceBean.postSchedule(jsonStr);
+		
+		String scheduleId = scheduleService.createSchedule
+				(scheduleDTO.getFilmId(), 
+				scheduleDTO.getScreeningRoomId(), 
+				scheduleDTO.getStartTime(),
+				scheduleDTO.getEndTime(), 
+				scheduleDTO.getPrice());
 		
 		response.getWriter().write(scheduleId);
 		response.flushBuffer();
 	}
 	
-	private void deleteSchedule(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	/**
+	 * Delete a schedule from a film.
+	 * 
+	 * @param request	HttpServletRequest
+	 * @param response	HttpServletResponse
+	 */
+	private void deleteSchedule(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
 		String scheduleId = request.getParameter("id");
 		
 		System.out.println(scheduleId);
@@ -149,37 +189,49 @@ public class EditFilmControllerServlet extends HttpServlet {
 		response.flushBuffer();
 	}
 	
-	private void editSchedule(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String scheduleId = request.getParameter("schedule_id");
-		float price = Float.parseFloat(request.getParameter("price"));
-		int startDay = Integer.parseInt(request.getParameter("start_day"));
-		int startMonth = Integer.parseInt(request.getParameter("start_month"));
-		int startYear = Integer.parseInt(request.getParameter("start_year"));
-		int startHour = Integer.parseInt(request.getParameter("start_hour"));
-		int startMin = Integer.parseInt(request.getParameter("start_min"));
-		LocalDateTime startTime = LocalDateTime.of(startYear, startMonth, startDay, startHour, startMin);
-		int endDay = Integer.parseInt(request.getParameter("end_day"));
-		int endMonth = Integer.parseInt(request.getParameter("end_month"));
-		int endYear = Integer.parseInt(request.getParameter("end_year"));
-		int endHour = Integer.parseInt(request.getParameter("end_hour"));
-		int endMin = Integer.parseInt(request.getParameter("end_min"));
-		LocalDateTime endTime = LocalDateTime.of(endYear, endMonth, endDay, endHour, endMin);
+	/**
+	 * Edit a schedule of a film.
+	 * 
+	 * @param request	HttpServletRequest
+	 * @param response	HttpServletResponse
+	 */
+	private void editSchedule(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		String jsonStr = getRequestContent(request);
 		
-		/*
-		System.out.println(scheduleId);
-		System.out.println(price);
-		System.out.println(startTime);
-		System.out.println(endTime);*/
-		scheduleService.updateSchedule(scheduleId, startTime, endTime, price);
+		ScheduleServiceBean scheduleServiceBean = 
+				new ScheduleServiceBean();
+		ScheduleDTO scheduleDTO = 
+				scheduleServiceBean.postSchedule(jsonStr);
+		
+		scheduleService.updateSchedule(scheduleDTO.getScheduleId(), 
+				scheduleDTO.getStartTime(), scheduleDTO.getEndTime(), 
+				scheduleDTO.getPrice());
 		
 		response.getWriter().write("success");
 		response.flushBuffer();
 	}
 
-	private void saveSchedule(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		scheduleService.saveChanges();
+	/**
+	 * Save all changes of schedules in a film.
+	 * 
+	 * @param request	HttpServletRequest
+	 * @param response	HttpServletResponse
+	 */
+	private void saveSchedule(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		String result = null;
+		boolean saveSuccess = scheduleService.saveChanges();
 		
-		response.getWriter().write("success");
+		if (saveSuccess) {
+			result = "success";
+		} else {
+			result = "fail";
+		}
+		
+		response.getWriter().write(result);
 		response.flushBuffer();
 	}
 }

@@ -17,11 +17,11 @@
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
         <a class="nav-item nav-link active" href="/AdminHomePage.html">Movies</a>
-        <a class="nav-item nav-link" href="/ViewOrder.html">Orders</a>
+        <a class="nav-item nav-link" href="/ViewAllOrder.html">Orders</a>
         <a class="nav-item nav-link" href="/ViewAccount.html">Accounts</a>
       </div>
     </div>
-    <form class="form-inline">
+    <form class="form-inline" action="AdminHomeControllerServlet?action=logout" method="post">
       <button class="btn btn-outline-danger my-2 my-sm-0" type="submit" id="logoutbtn">Log Out</button>
     </form>
   </nav>
@@ -40,55 +40,48 @@
       <div class="col-sm-1"></div>
     </div>
   </div>
-  
-  <div class="modal fade bd-example-modal-sm" id="processModal" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
-  		<div class="modal-dialog modal-sm">
-    		<div class="modal-content">
-      		Processing...Please wait :)
-      		Here is a joke:
-      		"Knock, knock."
-      		"Who's there?"
-      		…
-      		…
-      		…
-      		"Java."
-    		</div>
-  		</div>
-	</div>
 	
   <script type="text/javascript">
     $(document).ready(function() {
-    	var msg = $.ajax({
-          	url: "AdminHomeControllerServlet",
-          	type: "get",
-          	async:false
-      	}).responseText;
+    	var authorised = authorisation();
     	
-    	var filmList = JSON.parse(msg);
-    	$.each(filmList, function() {
-    		filmInfo = parseJson(this);
-    		createCard(filmInfo);
-    	})
+    	if (authorised) {
+	    	var msg = $.ajax({
+	          	url: "AdminHomeControllerServlet",
+	          	type: "get",
+	          	async:false
+	      	}).responseText;
+	    	
+	    	var filmList = JSON.parse(msg);
+	    	$.each(filmList, function() {
+	    		filmInfo = parseJson(this);
+	    		createCard(filmInfo);
+	    	})
+    	}
     });
     
+    function authorisation() {
+		var msg = $.ajax({
+	     	url: "AdminHomeControllerServlet",
+	     	type: "post",
+	     	dataType: 'json',
+	     	data: {
+	     		action: "authorisation",
+	     	},
+	      	async:false
+	  	}).responseText;
+		if (msg !== "true") {
+			window.history.back();
+			return false;
+		}
+		return true;
+	 }
+    
     function parseJson(filmJson) {
-    	var filmInfo = {};
-		filmInfo["film_id"] = filmJson.filmId;
+    	var filmInfo = filmJson;
 		filmInfo["film_poster"] = "image/poster1.jpg";
-		filmInfo["film_title"] = filmJson.title;
-		filmInfo["film_director"] = filmJson.director;
-		filmInfo["film_maincast"] = filmJson.mainCast;
-		filmInfo["film_runninghour"] = Math.floor(filmJson.runningTime.seconds / 3600);
-		filmInfo["film_runningmin"] = filmJson.runningTime.seconds % 3600 / 60;
-		filmInfo["film_description"] = filmJson.description;
-		filmInfo["film_genre"] = filmJson.genre;
     	return filmInfo;
     }
-  
-    $("#logoutbtn").on("click", function () {
-    	window.location.href = "/index.html";
-    	window.event.returnValue = false;	
-    });
     
     $("#addbtn").on("click", function () {
     	window.location.href = "/AddFilm.html";
@@ -97,8 +90,13 @@
     
     function deleteFilm(film_id) {
     	var msg = $.ajax({
-          	url: "AdminHomeControllerServlet?id="+film_id,
+          	url: "AdminHomeControllerServlet",
           	type: "post",
+          	dataType: 'json',
+        	data: {
+        		action: "delete",
+        		id: film_id,
+        	},
           	async:false
       	});
     }
@@ -136,11 +134,11 @@
     	p_director.innerHTML = "Director: " + filmInfo.film_director;
     	var p_maincast = document.createElement("p");
     	p_maincast.className = "card-text";
-    	p_maincast.innerHTML = "Main Cast: " + filmInfo.film_maincast;
+    	p_maincast.innerHTML = "Main Cast: " + filmInfo.film_main_cast;
     	var p_runningtime = document.createElement("p");
     	p_runningtime.className = "card-text";
-    	var runninghour = filmInfo.film_runninghour + " hour ";
-        var runningmin = filmInfo.film_runningmin != "0"? filmInfo.film_runningmin + " min" : "";
+    	var runninghour = filmInfo.film_running_hour + " hour ";
+        var runningmin = filmInfo.film_running_min != "0"? filmInfo.film_running_min + " min" : "";
     	p_runningtime.innerHTML = "Running Time: " + runninghour + runningmin;
     	var p_description = document.createElement("p");
     	p_description.className = "card-text";
@@ -152,11 +150,13 @@
     	small.innerHTML = "Genre: " + filmInfo.film_genre;
     	p_genre.appendChild(small);
     	var a_view = document.createElement("a");
-    	a_view.className = "btn btn-outline-primary btn-sm";
+    	a_view.className = "btn btn-outline-primary btn-sm mr-2";
+    	a_view.style = "width: 57px;";
     	a_view.href = view_url + filmInfo.film_id;
     	a_view.innerHTML = "View";
     	var a_edit = document.createElement("a");
-    	a_edit.className = "btn btn-outline-success btn-sm";
+    	a_edit.className = "btn btn-outline-success btn-sm mr-2";
+    	a_edit.style = "width: 57px;";
     	a_edit.href = edit_url + filmInfo.film_id;
     	a_edit.innerHTML = "Edit";
     	var delete_span = document.createElement('span');

@@ -17,11 +17,11 @@
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
         <a class="nav-item nav-link active" href="/AdminHomePage.html">Movies</a>
-        <a class="nav-item nav-link" href="/ViewOrder.html">Orders</a>
+        <a class="nav-item nav-link" href="/ViewAllOrder.html">Orders</a>
         <a class="nav-item nav-link" href="/ViewAccount.html">Accounts</a>
       </div>
     </div>
-    <form class="form-inline">
+    <form class="form-inline" action="ViewFilmControllerServlet?action=logout" method="post">
       <button class="btn btn-outline-danger my-2 my-sm-0" type="submit" id="logoutbtn">Log Out</button>
     </form>
   </nav>
@@ -74,7 +74,7 @@
 	    	  </div>
 	    	  <div class="form-group">
 	    		<label>Main Casts</label>
-	   			<input type="text" class="form-control" name="film_maincast" id="film_maincast" placeholder="Enter main casts" disabled required>
+	   			<input type="text" class="form-control" name="film_main_cast" id="film_main_cast" placeholder="Enter main casts" disabled required>
 	    	  </div>
 	    	  <div class="form-group">
 	    		<label>Genre</label>
@@ -84,7 +84,7 @@
 	    		<label>Running Time</label>
 	    		<div class="form-inline">
 	    		  <div class="form-group mx-sm-1 mb-2">
-	    		    <select class="form-control" name="film_runninghour" id="film_runninghour" disabled required>
+	    		    <select class="form-control" name="film_running_hour" id="film_running_hour" disabled required>
 	      		      <option value="1">1</option>
 	      		      <option value="2">2</option>
 	      		      <option value="3">3</option>
@@ -93,7 +93,7 @@
 	    		  </div>
 	    		  <label>hours</label>
 	    		  <div class="form-group mx-sm-1 mb-2">
-	    		    <select class="form-control" name="film_runningmin" id="film_runningmin" disabled required>
+	    		    <select class="form-control" name="film_running_min" id="film_running_min" disabled required>
 	      		      <option value="0">0</option>
 	      		      <option value="15">15</option>
 	      		      <option value="30">30</option>
@@ -138,24 +138,59 @@
   
   <script type="text/javascript">
   $(document).ready(function() {
-	var film_id = getParameterByName('id');
-	var msg = $.ajax({
-	     	url: "ViewFilmControllerServlet?id="+film_id,
-	     	type: "get",
-	     	async:false
-  	}).responseText;
-  	
-	var filmJson = JSON.parse(msg);
-	console.log(filmJson);
-	var filmInfo = parseFilmJson(filmJson);
-	var scheduleJson = filmJson.schedule;
-	var scheduleList = [];
-	$.each(scheduleJson, function() {
-		scheduleList.push(parseScheduleJson(this));
-	});
-	setInfo(filmInfo);
-	addBody(scheduleList);
+	var authorised = authorisation();  
+	
+	if (authorised) {
+		var film_id = getParameterByName('id');
+		var msg = $.ajax({
+		     	url: "ViewFilmControllerServlet",
+		     	type: "get",
+		     	data: {
+	          		action: "basic",
+	          		id: film_id,
+	          	},
+		     	async:false,
+	  		}).responseText;
+	  	
+		var filmJson = JSON.parse(msg);
+		console.log(filmJson);
+		var filmInfo = parseFilmJson(filmJson);
+		
+		var schedule_msg = $.ajax({
+		     	url: "ViewFilmControllerServlet",
+		     	type: "get",
+		     	data: {
+		      		action: "schedule",
+		      		id: film_id,
+		      	},
+		     	async:false,
+			}).responseText;
+		var scheduleJson = JSON.parse(schedule_msg);
+		var scheduleList = [];
+		$.each(scheduleJson, function() {
+			scheduleList.push(parseScheduleJson(this));
+		});
+		setInfo(filmInfo);
+		addBody(scheduleList);
+	}
   });
+  
+  function authorisation() {
+	var msg = $.ajax({
+     	url: "ViewFilmControllerServlet",
+     	type: "post",
+     	dataType: 'json',
+     	data: {
+     		action: "authorisation",
+     	},
+      	async:false
+  	}).responseText;
+	if (msg !== "true") {
+		window.history.back();
+		return false;
+	}
+	return true;
+ }
   
   function getParameterByName(name, url) {
 	if (!url) url = window.location.href;
@@ -170,44 +205,42 @@
   function setInfo(filmInfo) {
 	document.getElementById("film_title").value = filmInfo.film_title;
 	document.getElementById("film_director").value = filmInfo.film_director;
-	document.getElementById("film_maincast").value = filmInfo.film_maincast;
-	document.getElementById("film_runninghour").value = filmInfo.film_runninghour;
-	document.getElementById("film_runningmin").value = filmInfo.film_runningmin;
+	document.getElementById("film_main_cast").value = filmInfo.film_main_cast;
+	document.getElementById("film_running_hour").value = filmInfo.film_running_hour;
+	document.getElementById("film_running_min").value = filmInfo.film_running_min;
 	document.getElementById("film_description").value = filmInfo.film_description;
 	document.getElementById("film_genre").value = filmInfo.film_genre;
   }
   
   function parseScheduleJson(scheduleJson) {
 	var scheduleInfo = {};
-	scheduleInfo["schedule_id"] = scheduleJson.id;
-	scheduleInfo["screening_room"] = scheduleJson.screeningRoom.screeningRoomId;
-	var start_time = scheduleJson.startTime.dayOfMonth + "/" +
-					 scheduleJson.startTime.monthValue + "/" +
-					 scheduleJson.startTime.year + " " +
-	 				 scheduleJson.startTime.hour + ":" +
-					 scheduleJson.startTime.minute;
+	scheduleInfo["schedule_id"] = scheduleJson.schedule_id;
+	scheduleInfo["screening_room_id"] = scheduleJson.screening_room_id;
+	var start_minute = scheduleJson.start_time.minute < 10? 
+ 		   		"0" + scheduleJson.start_time.minute : 
+ 			  	scheduleJson.start_time.minute;
+	var start_time = scheduleJson.start_time.dayOfMonth + "/" +
+					 scheduleJson.start_time.monthValue + "/" +
+					 scheduleJson.start_time.year + " " +
+	 				 scheduleJson.start_time.hour + ":" +
+	 				 start_minute;
 	scheduleInfo["start_time"] = start_time;
-	var end_time = scheduleJson.endTime.dayOfMonth + "/" +
- 				   scheduleJson.endTime.monthValue + "/" +
- 				   scheduleJson.endTime.year + " " +
- 				   scheduleJson.endTime.hour + ":" +
-				   scheduleJson.endTime.minute;
+	var end_minute = scheduleJson.end_time.minute < 10? 
+	 		   "0" + scheduleJson.end_time.minute : 
+ 			   scheduleJson.end_time.minute;
+	var end_time = scheduleJson.end_time.dayOfMonth + "/" +
+ 				   scheduleJson.end_time.monthValue + "/" +
+ 				   scheduleJson.end_time.year + " " +
+ 				   scheduleJson.end_time.hour + ":" +
+ 				   end_minute;
 	scheduleInfo["end_time"] = end_time;
 	scheduleInfo["price"] = scheduleJson.price;
 	return scheduleInfo;
   }
   
   function parseFilmJson(filmJson) {
-	var filmInfo = {};
-	filmInfo["film_id"] = filmJson.filmId;
+	var filmInfo = filmJson;
 	filmInfo["film_poster"] = "image/poster1.jpg";
-	filmInfo["film_title"] = filmJson.title;
-	filmInfo["film_director"] = filmJson.director;
-	filmInfo["film_maincast"] = filmJson.mainCast;
-	filmInfo["film_runninghour"] = Math.floor(filmJson.runningTime.seconds / 3600);
-	filmInfo["film_runningmin"] = filmJson.runningTime.seconds % 3600 / 60;
-	filmInfo["film_description"] = filmJson.description;
-	filmInfo["film_genre"] = filmJson.genre;
 	return filmInfo;
   }
   
@@ -227,7 +260,7 @@
 	  title.scope = "row";
 	  title.innerHTML = scheduleInfo.schedule_id;
 	  var screening = document.createElement("td");
-	  screening.innerHTML = scheduleInfo.screening_room;
+	  screening.innerHTML = scheduleInfo.screening_room_id;
 	  var start_time = document.createElement("td");
 	  start_time.innerHTML = scheduleInfo.start_time;
 	  var end_time = document.createElement("td");
@@ -241,11 +274,6 @@
 	  row.appendChild(price);
 	  return row;
   }
-  
-  $("#logoutbtn").on("click", function () {
-  	window.location.href = "/index.html";
-  	window.event.returnValue = false;	
-  });
   </script>
 
 </body>

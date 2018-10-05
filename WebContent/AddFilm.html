@@ -19,11 +19,11 @@
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
         <a class="nav-item nav-link active" href="/AdminHomePage.html">Movies</a>
-        <a class="nav-item nav-link" href="/ViewOrder.html">Orders</a>
+        <a class="nav-item nav-link" href="/ViewAllOrder.html">Orders</a>
         <a class="nav-item nav-link" href="/ViewAccount.html">Accounts</a>
       </div>
     </div>
-    <form class="form-inline">
+    <form class="form-inline" action="AddFilmControllerServlet?action=logout" method="post">
       <button class="btn btn-outline-danger my-2 my-sm-0" type="submit" id="logoutbtn">Log Out</button>
     </form>
   </nav>
@@ -57,7 +57,7 @@
     	  </div>
     	  <div class="form-group">
     		<label>Main Casts</label>
-   			<input type="text" class="form-control" name="film_maincast" id="film_maincast" placeholder="Enter main casts" required>
+   			<input type="text" class="form-control" name="film_main_cast" id="film_maincast" placeholder="Enter main casts" required>
     	  </div>
     	  <div class="form-group">
     		<label>Genre</label>
@@ -67,7 +67,7 @@
     		<label>Running Time</label>
     		<div class="form-inline">
     		  <div class="form-group mx-sm-1 mb-2">
-    		    <select class="form-control" name="film_runninghour" id="film_runninghour" required>
+    		    <select class="form-control" name="film_running_hour" id="film_runninghour" required>
       		      <option value="1">1</option>
       		      <option value="2">2</option>
       		      <option value="3">3</option>
@@ -76,7 +76,7 @@
     		  </div>
     		  <label>hours</label>
     		  <div class="form-group mx-sm-1 mb-2">
-    		    <select class="form-control" name="film_runningmin" id="film_runningmin" required>
+    		    <select class="form-control" name="film_running_min" id="film_runningmin" required>
       		      <option value="0">0</option>
       		      <option value="15">15</option>
       		      <option value="30">30</option>
@@ -119,6 +119,28 @@
 	</div>
 
   <script type="text/javascript">
+  
+  $(document).ready(function() {
+  	authorisation();
+  });
+  
+  function authorisation() {
+	var msg = $.ajax({
+     	url: "AddFilmControllerServlet",
+     	type: "post",
+     	dataType: 'json',
+     	data: {
+     		action: "authorisation",
+     	},
+      	async:false
+  	}).responseText;
+	if (msg !== "true") {
+		window.history.back();
+		return false;
+	}
+	return true;
+ }
+  
   function previewFile() {
     var preview = document.querySelector('img');
     var file    = document.querySelector('input[type=file]').files[0];
@@ -148,18 +170,16 @@
           	url: f_url,
           	type: "post",
           	dataType: 'json',
-          	data: jsonData,
-          	async:false
+          	data: {
+          		action: "add",
+          		data: JSON.stringify(jsonData),
+          	},
+          	async:false,
       	}).responseText;
       if (msg == "success") {
     	  window.location.href = "/AdminHomePage.html";
       	  window.event.returnValue = false;	
       }
-  });
-  
-  $("#logoutbtn").on("click", function () {
-  	window.location.href = "/index.html";
-  	window.event.returnValue = false;	
   });
   </script>
 </body>

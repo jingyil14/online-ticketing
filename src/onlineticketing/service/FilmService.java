@@ -4,10 +4,14 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Random;
 
+import onlineticketing.datasource.ExclusiveWriteManager;
 import onlineticketing.datasource.FilmMapper;
 import onlineticketing.datasource.IdentityMap;
 import onlineticketing.domain.Film;
+import onlineticketing.domain.Schedule;
+import onlineticketing.domain.Ticket;
 import onlineticketing.onlineticketing.Params;
+import onlineticketing.onlineticketing.Session;
 
 public class FilmService {
 
@@ -27,21 +31,32 @@ public class FilmService {
 		Duration runningTime = Duration.ofHours(hour);
 		runningTime = runningTime.plusMinutes(minute);
 		
+		int filmId = getNextFilmId();
+		
+		Film film = new Film(filmId, title, description, director, mainCast, 
+				genre, runningTime);
+		FilmMapper filmMapper = new FilmMapper();
+		filmMapper.insert(film);
+	}
+	
+	/**
+	 * Generate a random int from 0 to 999999999 as the id for the new film,
+	 * generate the new id until it does not already exist as a film id
+	 * @return the next film id
+	 */
+	private int getNextFilmId() {
+		FilmMapper.findAllFilms();
+		
 		Film targetFilm = new Film();
 		IdentityMap<Film> filmMap = IdentityMap.getInstance(targetFilm);
 		
-		//generate a random int from 0 to 999999999 as the id for the new film
-		//generate the new id until it does not already exist as a film id
 		Random random = new Random();
 		int filmId = random.nextInt(Params.MAX_FILM_ID);
 		
 		while(filmMap.get(Integer.toString(filmId))!=null)
 			filmId = random.nextInt(Params.MAX_FILM_ID);
 		
-		Film film = new Film(filmId, title, description, director, mainCast, 
-				genre, runningTime);
-		FilmMapper filmMapper = new FilmMapper();
-		filmMapper.insert(film);
+		return filmId;
 	}
 	
 	/**
@@ -63,8 +78,6 @@ public class FilmService {
 		Film film = FilmMapper.findFilmById(Integer.parseInt(id));
 		if(film == null)
 			System.err.println("Cannot find the film with film ID " + id);
-		else
-			film.getSchedule();
 		
 		return film;
 	}
@@ -102,14 +115,40 @@ public class FilmService {
 	 * Delete a film
 	 * @param filmId  the film id of the film to be deleted
 	 */
-	public void deleteFilm(String filmId) {
+	public boolean deleteFilm(String filmId) {
 		
 		FilmMapper filmMapper = new FilmMapper();
 		Film film = FilmMapper.findFilmById(Integer.parseInt(filmId));
-		if (film == null)
+		if (film == null) {
 			System.err.println("The film being deleted does not exist");
+			return false;
+		}	
 		else {
+			//acquire lock for all the tickets of the film
+			ExclusiveWriteManager lockingManager = ExclusiveWriteManager.getInstance();
+			int userId = Session.getInstance().getUserid();
+			boolean acquireLock = true;
+			
+			ArrayList<Schedule> scheduleList = film.getSchedule();
+			ArrayList<Ticket> ticketList = new ArrayList<Ticket>();
+			for (Schedule schedule : scheduleList) {
+				ticketList.addAll(schedule.getTickets());
+			}
+			
+			for (Ticket ticket : ticketList) {
+				if(!lockingManager.acquireLock(ticket.getId(), userId))
+					acquireLock = false;
+			}
+			
+			if(!acquireLock) {
+				for (Ticket ticket : ticketList) {
+					lockingManager.releaseLock(ticket.getId(), userId);
+				}
+				return false;
+			}
+			
 			filmMapper.delete(film);
+			return true;
 		}
 	}
 	

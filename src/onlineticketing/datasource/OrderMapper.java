@@ -4,10 +4,13 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 import onlineticketing.domain.DomainObject;
 import onlineticketing.domain.Order;
+import onlineticketing.onlineticketing.Params;
 
 public class OrderMapper implements DataMapper{
 
@@ -21,16 +24,17 @@ public class OrderMapper implements DataMapper{
 		IdentityMap<Order> orderMap = IdentityMap.getInstance(targetOrder);
 		
 		String createOrderString = "INSERT INTO ONLINETICKETING.ORDERS "
-				+ "(STATUS, CREATETIME, PAYMENT, CUSTOMERID, TICKETINFO) "
-				+ "VALUES (?, ?, ?, ?, ?)";
+				+ "(ORDERID, STATUS, CREATETIME, PAYMENT, CUSTOMERID, TICKETINFO) "
+				+ "VALUES (?, ?, ?, ?, ?, ?)";
 		PreparedStatement createStatement = DBConnection.prepare(createOrderString);
 		
 		try {
-			createStatement.setInt(1, order.getStatus());
-			createStatement.setObject(2, order.getCreateTime());
-			createStatement.setFloat(3, order.getPayment());
-			createStatement.setInt(4, order.getCustomerId());
-			createStatement.setString(5, order.getTicketInformation());
+			createStatement.setInt(1, order.getOrderId());
+			createStatement.setInt(2, order.getStatus());
+			createStatement.setObject(3, order.getCreateTime());
+			createStatement.setFloat(4, order.getPayment());
+			createStatement.setInt(5, order.getCustomerId());
+			createStatement.setString(6, order.getTicketInformation());
 			createStatement.execute();
 			System.out.println(createStatement.toString());
 			
@@ -41,7 +45,7 @@ public class OrderMapper implements DataMapper{
 			e.printStackTrace();
 		}
 		
-//		orderMap.put(id, order);
+		orderMap.put(order.getId(), order);
 	}
 
 	@Override
@@ -53,7 +57,7 @@ public class OrderMapper implements DataMapper{
 		Order targetOrder = new Order();
 		IdentityMap<Order> orderMap = IdentityMap.getInstance(targetOrder);
 		
-		String updateOrderString = "UPDATE ONLINTICKETING.ORDERS SET STATUS = ? "
+		String updateOrderString = "UPDATE ONLINETICKETING.ORDERS SET STATUS = ? "
 				+ "WHERE ORDERID = " + order.getOrderId();
 		PreparedStatement updateStatement = DBConnection.prepare(updateOrderString);
 		
@@ -121,9 +125,13 @@ public class OrderMapper implements DataMapper{
 				
 				targetOrder = orderMap.get(order.getId());
 				if(targetOrder == null) {
+//					order.getTickets();
+					checkLockExpire(order);
 					orderMap.put(order.getId(), order);
 					orderList.add(order);
 				} else {
+//					targetOrder.getTickets();
+					checkLockExpire(targetOrder);
 					orderList.add(targetOrder);
 				}
 					
@@ -140,6 +148,87 @@ public class OrderMapper implements DataMapper{
 	}
 	
 	/**
+	 * Find all the order of a customer in the database
+	 * @return a list of all the Order objects in the database
+	 */
+	public static ArrayList<Order> findAllOrdersByCustomerId(String customerId){
+		
+		Order targetOrder = new Order();
+		IdentityMap<Order> orderMap = IdentityMap.getInstance(targetOrder);
+		
+		ArrayList<Order> orderList = new ArrayList<Order>();
+		String findAllOrdersString = "SELECT * FROM ONLINETICKETING.ORDERS "
+				+ "WHERE CUSTOMERID = '" + customerId + "'";
+		PreparedStatement findAllStatement = DBConnection.prepare(findAllOrdersString);
+		
+		try {
+			ResultSet rs = findAllStatement.executeQuery();
+			
+			while(rs.next()) {
+				Order order = loadOrder(rs);
+				
+				targetOrder = orderMap.get(order.getId());
+				if(targetOrder == null) {
+					checkLockExpire(order);
+					orderMap.put(order.getId(), order);
+					orderList.add(order);
+				} else {
+					checkLockExpire(targetOrder);
+					orderList.add(targetOrder);
+				}
+					
+			}
+			DBConnection.close(findAllStatement);
+			rs.close();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
+		
+		return orderList;
+	}
+	
+	public static Order findOrderByOrderId(String orderId){
+		
+		Order targetOrder = new Order();
+		IdentityMap<Order> orderMap = IdentityMap.getInstance(targetOrder);
+		targetOrder = orderMap.get(orderId);
+		
+		if(targetOrder == null) {
+			String findOrderString = "SELECT * FROM ONLINETICKETING.ORDERS "
+					+ "WHERE ORDERID = " + orderId;
+			PreparedStatement findStatement = DBConnection.prepare(findOrderString);
+			Order order = null;
+			
+			try {
+				ResultSet rs = findStatement.executeQuery();
+				
+				while(rs.next()) {
+					order = loadOrder(rs);
+				}
+				DBConnection.close(findStatement);
+				rs.close();
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}	
+			checkLockExpire(order);
+			return order;
+			
+		} else {
+			checkLockExpire(targetOrder);
+			return targetOrder;
+		}
+	}
+	
+	public static void checkLockExpire(Order order) {
+		if(order.getStatus()==Params.ORDER_CREATED)
+			order.getTickets();
+	}
+	
+	/**
 	 * Generate an order object from a resultset
 	 * @param rs the resultset of an order
 	 * @return the order object generated by the resultset
@@ -150,7 +239,8 @@ public class OrderMapper implements DataMapper{
 		try {
 			int orderId = rs.getInt("ORDERID");
 			float payment = rs.getFloat("PAYMENT");
-			java.util.Date createTime = new java.util.Date(rs.getDate("CREATETIME").getTime());
+			Timestamp createTimestamp = rs.getTimestamp("CREATETIME");
+			LocalDateTime createTime = convertToLocalDateTimeViaSqlTimestamp(new Date(createTimestamp.getTime()));
 			int status = rs.getInt("STATUS");
 			int customerId = rs.getInt("CUSTOMERID");
 			String ticketInformation = rs.getString("TICKETINFO");
@@ -162,5 +252,15 @@ public class OrderMapper implements DataMapper{
 		}
 		
 		return order;
+	}
+	
+	/**
+	 * Convert Date type to LocalDateTime type
+	 * @param dateToConvert  the date to be converted
+	 * @return  the converted LocalDateTime
+	 */
+	public static LocalDateTime convertToLocalDateTimeViaSqlTimestamp(Date dateToConvert) {
+	    return new java.sql.Timestamp(
+	      dateToConvert.getTime()).toLocalDateTime();
 	}
 }

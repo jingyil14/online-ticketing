@@ -20,11 +20,11 @@
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/AdminHomePage.html">Movies</a>
-        <a class="nav-item nav-link" href="/ViewOrder.html">Orders</a>
+        <a class="nav-item nav-link" href="/ViewAllOrder.html">Orders</a>
         <a class="nav-item nav-link active" href="/ViewAccount.html">Accounts</a>
       </div>
     </div>
-    <form class="form-inline">
+    <form class="form-inline" action="ViewAccountControllerServlet?action=logout" method="post">
       <button class="btn btn-outline-danger my-2 my-sm-0" type="submit" id="logoutbtn">Log Out</button>
     </form>
   </nav>
@@ -47,7 +47,6 @@
 		    <tr>
 	          <th>User ID</th>
 		      <th>Username</th>
-		      <th>Password</th>
 		      <th>Phone number</th>
 		    </tr>
 		  </thead>
@@ -60,43 +59,58 @@
   
   <script type="text/javascript">
     $(document).ready(function() {
-	  $('#account_table').DataTable({
-	    "ajax" : 
-	    	function(data, callback, settings) {
-            $.ajax({
-                type: "GET",
-                url: 'ViewAccountControllerServlet',
-                cache : false, 
-                dataType: "json",
-                success: function(result) {
-                	var accountJson = {};
-                	accountJson["data"] = result;
-                	callback(accountJson);
-                },
-                error: function(XMLHttpRequest, textStatus, errorThrown) {
-                    alert("Failed.");
-                }
-            });
-	       }
-        ,
-        "columns": [
-            { "data": "id" },
-            { "data": "userName" },
-            { "data": "password" },
-            { "data": "phoneNumber",
-              "render": function (data, type, full, meta) {
- 		  					var phone = data == 0?"":data;
- 		  					return phone;
- 		  				}
-            }
-        ]
-      });
+   	  var authorised = authorisation();	
+    	
+   	  if (authorised) {
+		  $('#account_table').DataTable({
+		    "ajax" : 
+		    	function(data, callback, settings) {
+	            $.ajax({
+	                type: "GET",
+	                url: 'ViewAccountControllerServlet',
+	                cache : false, 
+	                dataType: "json",
+	                success: function(result) {
+	                	var accountJson = {};
+	                	accountJson["data"] = result;
+	                	callback(accountJson);
+	                },
+	                error: function(XMLHttpRequest, textStatus, errorThrown) {
+	                    alert("Failed.");
+	                }
+	            });
+		       }
+	        ,
+	        "columns": [
+	            { "data": "user_id" },
+	            { "data": "username" },
+	            { "data": "phone_number",
+	              "render": function (data, type, full, meta) {
+	 		  					var phone = data == 0?"":data;
+	 		  					return phone;
+	 		  				}
+	            }
+	        ]
+	      });
+   	  }
 	} );
     
-    $("#logoutbtn").on("click", function () {
-    	window.location.href = "/index.html";
-    	window.event.returnValue = false;	
-    });
+    function authorisation() {
+		var msg = $.ajax({
+	     	url: "ViewAccountControllerServlet",
+	     	type: "post",
+	     	dataType: 'json',
+	     	data: {
+	     		action: "authorisation",
+	     	},
+	      	async:false
+	  	}).responseText;
+		if (msg !== "true") {
+			window.history.back();
+			return false;
+		}
+		return true;
+	 }
   </script>	
 </body>
 </html>

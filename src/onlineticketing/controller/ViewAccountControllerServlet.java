@@ -10,14 +10,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.sf.json.JSONArray;
+import onlineticketing.datatransfer.CustomerServiceBean;
 import onlineticketing.domain.User;
+import onlineticketing.onlineticketing.Params;
 import onlineticketing.service.CustomerService;
 
 /**
  * Servlet implementation class ViewAccountServlet
  */
 @WebServlet("/ViewAccountControllerServlet")
-public class ViewAccountControllerServlet extends HttpServlet {
+public class ViewAccountControllerServlet extends ActionServlet {
 	private static final long serialVersionUID = 1L;
        
     /**
@@ -29,25 +31,34 @@ public class ViewAccountControllerServlet extends HttpServlet {
     }
 
 	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#doGet(HttpServletRequest request, 
+	 * HttpServletResponse response)
 	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		System.out.println("do get");
-		CustomerService customerService = new CustomerService();
-		ArrayList<User> users = customerService.viewAllUserInformation();
+	protected void doGet(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		CustomerServiceBean customerServiceBean = 
+				new CustomerServiceBean();
+		String json = customerServiceBean.getAllCustomerJson();
 		
-		JSONArray listArray=JSONArray.fromObject(users);
-		
-		response.getWriter().write(listArray.toString());
+		response.getWriter().write(json);
 		response.flushBuffer();
 	}
-
+	
 	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#doPost(HttpServletRequest request, 
+	 * HttpServletResponse response)
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		doGet(request, response);
+	protected void doPost(HttpServletRequest request, 
+			HttpServletResponse response)
+					throws ServletException, IOException {
+		String action = request.getParameter("action");
+		if (action.equals("logout")) {
+			logout(request, response);
+		} else if (action.equals("authorisation")) {
+			String target = Params.VIEW_ACCOUNT_URL;
+			authorisation(target, request, response);
+		}
 	}
 
 }

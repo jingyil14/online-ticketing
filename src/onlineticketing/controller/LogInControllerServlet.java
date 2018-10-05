@@ -14,7 +14,7 @@ import onlineticketing.service.AuthenticationService;
  * Servlet implementation class LogInControllerServlet
  */
 @WebServlet("/LogInControllerServlet")
-public class LogInControllerServlet extends HttpServlet {
+public class LogInControllerServlet extends ActionServlet {
 	private static final long serialVersionUID = 1L;
 
     /**
@@ -23,46 +23,78 @@ public class LogInControllerServlet extends HttpServlet {
     public LogInControllerServlet() {
         // TODO Auto-generated constructor stub
     }
-
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+    
+    /**
+	 * @see HttpServlet#doPost(HttpServletRequest request, 
+	 * HttpServletResponse response)
 	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) 
-			throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
+	protected void doGet(HttpServletRequest request, 
+			HttpServletResponse response)
+					throws ServletException, IOException {
+		doPost(request, response);
 	}
 
 	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#doPost(HttpServletRequest request, 
+	 * HttpServletResponse response)
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) 
-			throws ServletException, IOException {
+	protected void doPost(HttpServletRequest request, 
+			HttpServletResponse response)
+					throws ServletException, IOException {
 		String action = request.getParameter("action");
 		if (action.equals("login")) {
-			this.login(request, response);
+			login(request, response);
+		} else if (action.equals("register")) {
+			register(request, response);
 		}
 	}
 	
-	private void login(HttpServletRequest request, HttpServletResponse response) 
-			throws ServletException, IOException {
-		String username = request.getParameter("username");
-		String password = request.getParameter("password");
+	/**
+	 * Call AuthenticationController to authenticate passed-in 
+	 * request and return the permission of the request.
+	 * 
+	 * @param request	HttpServletRequest
+	 * @param response	HttpServletResponse
+	 */
+	private void login(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		AuthenticationController authenticationController = 
+				new AuthenticationController();
+		int permission = 
+				authenticationController.authenticate(request);
 		String result = null;
-		AuthenticationService authenticationService = new AuthenticationService();
-		int permission = authenticationService.getPermission(username, password);
 		
 		if (permission == Params.ADMIN_PERMISSION) {
-			System.out.println("Admin");
 			result = "admin";
 		} else if (permission == Params.CUSTOMER_PERMISSION) {
-			System.out.println("Customer");
 			result = "customer";
-		} else {
-			System.out.println("Error");
+		} else if (permission == Params.INVALID_PERMISSION){
 			result = "error";
 		}
+		
 		response.getWriter().write(result);
+		response.flushBuffer();
+	}
+	
+	/**
+	 * Call AuthenticationController to register passed-in request.
+	 * 
+	 * @param request	HttpServletRequest
+	 * @param response	HttpServletResponse
+	 */
+	private void register(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		String username = request.getParameter("username");
+		String password = request.getParameter("password");
+		int phoneNumber = Integer.parseInt(request.getParameter("phoneNumber"));
+		
+		AuthenticationService authenticationService = new AuthenticationService();
+		boolean result = 
+				authenticationService.registerAccount(username, password, phoneNumber);
+		
+		response.getWriter().write(Boolean.toString(result));
 		response.flushBuffer();
 	}
 

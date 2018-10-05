@@ -23,7 +23,9 @@ public class SeatMapper {
 		
 		try {
 			ResultSet rs = findSeatStatement.executeQuery();
-			seat = loadSeat(rs);
+			while(rs.next()) {
+				seat = loadSeat(rs);
+			}
 			
 			DBConnection.close(findSeatStatement);
 			rs.close();

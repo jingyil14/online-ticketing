@@ -1,26 +1,21 @@
 package onlineticketing.controller;
 
 import java.io.IOException;
-import java.util.Date;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.ArrayList;
-
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.sf.json.JSONArray;
-import onlineticketing.domain.Order;
-import onlineticketing.service.CustomerService;
+import onlineticketing.datatransfer.OrderServiceBean;
+import onlineticketing.onlineticketing.Params;
+import onlineticketing.onlineticketing.Session;
 
 /**
  * Servlet implementation class ViewOrderControllerServlet
  */
 @WebServlet("/ViewOrderControllerServlet")
-public class ViewOrderControllerServlet extends HttpServlet {
+public class ViewOrderControllerServlet extends ActionServlet {
 	private static final long serialVersionUID = 1L;
        
     /**
@@ -32,30 +27,36 @@ public class ViewOrderControllerServlet extends HttpServlet {
     }
 
 	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#doGet(HttpServletRequest request, 
+	 * HttpServletResponse response)
 	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		CustomerService customerService = new CustomerService();
-		ArrayList<Order> orders = customerService.viewAllOrders();
-		/*
-		LocalDate localDate = LocalDate.now();
-		Date date = Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-		Order order = new Order(0,100,date,0,1,"information");
-		ArrayList<Order> orders = new ArrayList<Order>();
-		orders.add(order);*/
+	protected void doGet(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		Session session = Session.getInstance();
+		int userid = session.getUserid();
 		
-		JSONArray listArray=JSONArray.fromObject(orders);
+		OrderServiceBean orderServiceBean = new OrderServiceBean();
+		String json = orderServiceBean.getAllOrdersByCustomerId(userid);
 		
-		response.getWriter().write(listArray.toString());
+		response.getWriter().write(json);
 		response.flushBuffer();
 	}
 
 	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#doPost(HttpServletRequest request, 
+	 * HttpServletResponse response)
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		doGet(request, response);
+	protected void doPost(HttpServletRequest request, 
+			HttpServletResponse response) 
+					throws ServletException, IOException {
+		String action = request.getParameter("action");
+		if (action.equals("logout")) {
+			logout(request, response);
+		} else if (action.equals("authorisation")) {
+			String target = Params.VIEW_ORDER_URL;
+			authorisation(target, request, response);
+		}
 	}
 
 }

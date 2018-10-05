@@ -1,5 +1,5 @@
 /build/
 /bin/
 .classpath
-.settings/
+/.settings/
 /target/

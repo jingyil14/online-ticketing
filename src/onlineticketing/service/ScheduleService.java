@@ -6,10 +6,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import onlineticketing.datasource.ExclusiveWriteManager;
 import onlineticketing.datasource.ScheduleMapper;
+import onlineticketing.datasource.TicketMapper;
 import onlineticketing.datasource.UnitOfWork;
 import onlineticketing.domain.Film;
 import onlineticketing.domain.Schedule;
+import onlineticketing.domain.Ticket;
+import onlineticketing.onlineticketing.Session;
 
 public class ScheduleService {
 	
@@ -26,6 +30,10 @@ public class ScheduleService {
 		updatedSchedules = new ArrayList<Schedule>();
 		deletedSchedules = new ArrayList<String>();
 		newIdMap = new HashMap<String, ArrayList<String>>();
+	}
+	
+	public Schedule getScheduleByScheduleId(String scheduleId) {
+		return ScheduleMapper.findScheduleByScheduleId(scheduleId);
 	}
 	
 	/** 
@@ -80,7 +88,7 @@ public class ScheduleService {
 	 * Create all the schedule in new schedule list, update all the schedule in the 
 	 * updated schedule list, delete all the schedules with the id in deleted list
 	 */
-	public void saveChanges() {
+	public boolean saveChanges() {
 		UnitOfWork.newCurrent();
 	
 		for (Schedule schedule : newSchedules) {
@@ -98,13 +106,37 @@ public class ScheduleService {
 		}
 		UnitOfWork.getCurrent().commit();
 		
+		ExclusiveWriteManager lockingManager = ExclusiveWriteManager.getInstance();
+		int userId = Session.getInstance().getUserid();
+		boolean result = true;
+		ArrayList<Ticket> locksToRelease = new ArrayList<Ticket>();
+		
 		for (String scheduleId : deletedSchedules) {
-			System.out.println(scheduleId);
-			Schedule schedule = ScheduleMapper.findScheduleByScheduleId(scheduleId);
-			UnitOfWork.getCurrent().registerDeleted(schedule);
+			boolean acquireLock = true;
+			ArrayList<Ticket> ticketList = TicketMapper.findTicketsByScheduleId(scheduleId);
+			for (Ticket ticket : ticketList) {
+				if (!lockingManager.acquireLock(ticket.getId(), userId))
+					acquireLock = false;
+			}
+			
+			if (!acquireLock) {
+				for (Ticket ticket : ticketList) {
+					lockingManager.releaseLock(ticket.getId(), userId);
+				}
+				result = false;
+			} else {
+				locksToRelease.addAll(ticketList);
+				Schedule schedule = ScheduleMapper.findScheduleByScheduleId(scheduleId);
+				UnitOfWork.getCurrent().registerDeleted(schedule);
+			}
 		}
 		
-		UnitOfWork.getCurrent().commit();
+		UnitOfWork.getCurrent().commit();	
+		for(Ticket ticket : locksToRelease) {
+			lockingManager.releaseLock(ticket.getId(), userId);
+		}
+		
+		return result;
 	}
 	
 	/**
