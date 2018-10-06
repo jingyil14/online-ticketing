@@ -400,22 +400,25 @@
 	if (tickets.length == 0) {
 		alert("No seat is selected.");
 	} else {
-		var msg = $.ajax({
-	     	url: "BuyTicketControllerServlet",
-	     	type: "post",
-	     	data: {
-	      		action: "pay",
-	      		tickets: JSON.stringify(tickets),
-	      	},
-	     	async:false,
-		}).responseText;
-		if (msg == -1) {
-			alert("The chosen seats are unavliable now, please change another seat.");
-			location.reload();
-		} else {
-			window.location.href = "/Payment.html?id="+msg;
-		  	window.event.returnValue = false;
-		}
+		setTimeout(function(){
+			var msg = $.ajax({
+		     	url: "BuyTicketControllerServlet",
+		     	type: "post",
+		     	data: {
+		      		action: "pay",
+		      		tickets: JSON.stringify(tickets),
+		      	},
+		     	async:false,
+			}).responseText;
+			if (msg == -1) {
+				alert("The chosen seats are unavliable now, please change another seat.");
+				location.reload();
+			} else {
+				window.location.href = "/Payment.html?id="+msg;
+			  	window.event.returnValue = false;
+			}
+		});
+		$(this).unbind('click',arguments.callee);
 	}  		
   });
   </script>
