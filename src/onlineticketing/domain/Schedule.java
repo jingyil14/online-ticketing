@@ -97,6 +97,7 @@ public class Schedule extends DomainObject{
 			IdentityMap<Ticket> ticketMap = IdentityMap.getInstance(targetTicket);
 			
 			for (Ticket ticket : tickets) {
+				TicketMapper.checkLockExpire(ticket);
 				ticket = ticketMap.get(ticket.getId());
 			}
 		}

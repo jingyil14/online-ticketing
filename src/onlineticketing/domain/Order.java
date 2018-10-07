@@ -65,16 +65,8 @@ public class Order extends DomainObject{
 		return Integer.parseInt(id);
 	}
 
-	public void setPayment(float payment) {
-		this.payment = payment;
-	}
-
 	public float getPayment() {
 		return payment;
-	}
-	
-	public void setCreateTime(LocalDateTime createTime) {
-		this.createTime = createTime;
 	}
 
 	public LocalDateTime getCreateTime() {
@@ -95,10 +87,6 @@ public class Order extends DomainObject{
 
 	public String getTicketInformation() {
 		return ticketInformation;
-	}
-	
-	public void setTicketInformation(String ticketInformation) {
-		this.ticketInformation = ticketInformation;
 	}
 
 	public ArrayList<Ticket> getTickets() {

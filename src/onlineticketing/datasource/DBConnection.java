@@ -7,13 +7,13 @@ import java.sql.SQLException;
 
 public class DBConnection {
     static final String JDBC_DRIVER = "org.postgresql.Driver";  
-    static final String DB_URL = "jdbc:postgresql://ec2-50-17-194-129.compute-1.amazonaws.com:5432/d8ai6gphpuhcgm?sslmode=require";
-//    static final String DB_URL = "jdbc:postgresql://localhost:5432/postgres";
+//    static final String DB_URL = "jdbc:postgresql://ec2-50-17-194-129.compute-1.amazonaws.com:5432/d8ai6gphpuhcgm?sslmode=require";
+    static final String DB_URL = "jdbc:postgresql://localhost:5432/postgres";
  
-    static final String USER = "wvndimtlxizlyg";
-//    static final String USER = "postgres";
-    static final String PASSWORD = "4f5ff5a17114e7187257dbcba5089585221e41b69cde6eddfb1b8a08b75d6035";
-//    static final String PASSWORD = "12345";
+//    static final String USER = "wvndimtlxizlyg";
+    static final String USER = "postgres";
+//    static final String PASSWORD = "4f5ff5a17114e7187257dbcba5089585221e41b69cde6eddfb1b8a08b75d6035";
+    static final String PASSWORD = "12345";
     
     static Connection dbConnection = null;
     

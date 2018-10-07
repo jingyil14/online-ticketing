@@ -89,11 +89,6 @@ public class CustomerService {
 		Order order = new Order(orderId, payment, createTime, status, 
 				orderDTO.getCustomerId(), ticketInformation, tickets);
 		
-//		order.setPayment(payment);
-//		order.setCreateTime(createTime);
-//		order.setStatus(status);
-//		order.setTicketInformation(ticketInformation);
-		
 		new OrderMapper().insert(order);
 		
 		User user = UserMapper.findUserByUserId(order.getCustomerId());

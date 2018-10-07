@@ -1,7 +1,6 @@
 package onlineticketing.controller;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -9,13 +8,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import onlineticketing.datasource.ExclusiveWriteManager;
 import onlineticketing.datatransfer.FilmServiceBean;
 import onlineticketing.datatransfer.OrderDTO;
 import onlineticketing.datatransfer.OrderServiceBean;
 import onlineticketing.datatransfer.ScheduleServiceBean;
 import onlineticketing.datatransfer.TicketServiceBean;
-import onlineticketing.domain.Ticket;
 import onlineticketing.onlineticketing.Params;
 import onlineticketing.onlineticketing.Session;
 import onlineticketing.service.CustomerService;
